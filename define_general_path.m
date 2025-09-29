@@ -59,12 +59,28 @@ function path = define_general_path(Flag_operator, Flag_lab_pc, SubjId, SubjCat)
     
     elseif strcmp(Flag_operator, 'Valeria')
     
+    elseif strcmp(Flag_operator, 'Daniel')
+        if Flag_lab_pc == 0 % Daniel's Mac
+
+            % restoredefaultpath
+            % addpath /Volumes/Hummel-Lab/Students_Interns/Daniel/apatTIS_iDBS_PD_2024/Toolboxes&Functions/fieldtrip-20250318
+            % ft_defaults
+
+            % Define path for scripts/functions/pipeline
+            addpath(genpath('/Volumes/Hummel-Lab/Students_Interns/Daniel/apatTIS_iDBS_PD_2024/Toolboxes&Functions/functions'))
+
+            if strcmp(SubjId, 'S1_') && strcmp(SubjCat, 'PD_TI')
+                addpath(genpath('/Volumes/Hummel-Lab/Students_Interns/Daniel/apatTIS_iDBS_PD_2024/20250319_PD_TI1'))
+                path = '/Volumes/Hummel-Lab/Students_Interns/Daniel/apatTIS_iDBS_PD_2024/20250319_PD_TI1'; 
+            end
+        end
+    
         
     
     
     
     else
-        error('Specify operator as Simona or Valeria')
+        error('Specify operator as Simona, Valeria or Daniel')
     end
 
 end

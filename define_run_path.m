@@ -194,7 +194,29 @@ function [behav_data_folder, tag, trig_name, data_folder, behav_data_file_number
     
     elseif strcmp(Flag_operator, 'Valeria')
 
+    elseif strcmp(Flag_operator, 'Daniel')
+        if Flag_lab_pc == 0
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PD_TI
+            if strcmp(SubjId,'S1_') && strcmp(SubjCat, 'PD_TI') && ismember(Run, [13 14 15 16 17])
+                behav_data_folder = 'Behavioral data';
+                behav_data_file_number = [SubjId,run_name];            
+                tag = 'AM-DBS-180Hz-TI';
+                trig_name = 'TriggerDecoding_PD_TI1_rec'; 
+                data_folder ='Processed_Ste'; 
 
+                if ismember(Run, 13) 
+                    tag = 'AM-DBS-180Hz-TI_iTBS'; %iTBS
+                elseif ismember(Run, 14)
+                    tag = 'AM-DBS-180Hz-TI_HF'; %HF
+                elseif ismember(Run, 15)
+                    tag = 'AM-DBS-180Hz-TI_cTBS'; %cTBS
+                elseif ismember(Run, 16)
+                    tag = 'AM-DBS-180Hz_sham'; %sham
+                elseif ismember(Run, 17)
+                    tag = 'AM-DBS-180Hz_130'; %130Hz
+                end
+            end
+        end
 
     else
         error('Specify operator as Simona or Valeria')

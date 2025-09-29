@@ -68,14 +68,11 @@ function [TableTrig] = get_phase_triggers(EP_flag, behav_table)
     elseif contains(behav_table.Block{1}, 'RS')
 
         TableTrig{1, 'B0'} = [1, 11];
-        TableTrig{1, 'Stim1'} = [11, 2];
+        TableTrig{1, 'S'} = [11, 2];
         TableTrig{1, 'B1'} = [2, 11];
-        TableTrig{1, 'Stim2'} = [11, 3];
+        TableTrig{1, 'B1'} = [11, 3];
         TableTrig{1, 'B2'} = [3, 4];
 
-        if contains(behav_table.Phase{1}, 'TI')
-            TableTrig{1, 'TI'} = [11];
-        end
 
     end
 

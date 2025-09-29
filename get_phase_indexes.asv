@@ -67,6 +67,7 @@ function [TableIndexes_LFP_referred, behav_table, TI_struct] = get_phase_indexes
 
     % Create TI structure if TI trigger exists
     if ismember('TI', TableTriggers.Properties.VariableNames)
+        disp(length(EMG_time(find(TriggerVector == TableTriggers{1, 'TI'}))));
         TI_struct.TI_trig_LFP_referred = find( LFP_time >= EMG_time(find(TriggerVector == TableTriggers{1, 'TI'})), 1 );
         behav_table.TI_trigger = repelem(TI_struct.TI_trig_LFP_referred, size(behav_table,1))';
     end
