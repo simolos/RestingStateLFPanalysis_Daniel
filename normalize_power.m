@@ -77,8 +77,11 @@ function [TablePower, idxTrialsWoBaseline] = normalize_power(TablePower, flag_no
 
             for i = 1:size(TablePower, 1) % loop over trials
 
-                MeanBaseline = mean(OriginalTablePower.(BaselinePhaseName){i}(:,1:2));
-                StdBaseline = std(OriginalTablePower.(BaselinePhaseName){i}(:,1:2));
+                %MeanBaseline = mean(OriginalTablePower.(BaselinePhaseName){i}(:,1:2));
+                %StdBaseline = std(OriginalTablePower.(BaselinePhaseName){i}(:,1:2));
+                MeanBaseline = mean(OriginalTablePower.(BaselinePhaseName){i});
+                StdBaseline = std(OriginalTablePower.(BaselinePhaseName){i});
+
 
                 for j = 1:size(TablePower, 2) % loop over phases 
                     if 1 %~strcmp(TablePower.Properties.VariableNames{j}, BaselinePhaseName) % if it's not the baseline

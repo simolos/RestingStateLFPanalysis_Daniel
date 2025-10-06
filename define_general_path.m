@@ -68,6 +68,8 @@ function path = define_general_path(Flag_operator, Flag_lab_pc, SubjId, SubjCat)
 
             % Define path for scripts/functions/pipeline
             addpath(genpath('/Volumes/Hummel-Lab/Students_Interns/Daniel/apatTIS_iDBS_PD_2024/Toolboxes&Functions/functions'))
+            addpath(genpath('/Volumes/Hummel-Lab/Students_Interns/Daniel/apatTIS_iDBS_PD_2024/Toolboxes&Functions/chronux_2_10'))
+
 
             if strcmp(SubjId, 'S1_') && strcmp(SubjCat, 'PD_TI')
                 addpath(genpath('/Volumes/Hummel-Lab/Students_Interns/Daniel/apatTIS_iDBS_PD_2024/20250319_PD_TI1'))

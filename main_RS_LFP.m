@@ -71,6 +71,7 @@ path = define_general_path(flag_operator, flag_lab_pc, SubjId, SubjCat);
 
 %% Main loop
 for r = 1:length(run)
+
     Run = run{r};
     disp(num2str(Run))
 
@@ -116,99 +117,99 @@ for r = 1:length(run)
     disp('loaded')
 
     %% --- Plot aligned
-%     if( max(ismember(EMG.channelNames,'trig_A' ))==1 )
-%         idx_trig = find( strcmpi( EMG.channelNames,'trig_A' ));
-%     elseif ( max(ismember(EMG.channelNames,'Trig_A' ))==1 )
-%         idx_trig = find( strcmpi( EMG.channelNames,'Trig_A' ));
-%     end
-%     
-%     % check for NaN value
-%     NaNidx = find(isnan(LFP.data(:,1)));
-%     if ~isempty(NaNidx) 
-%         disp('Warning NaN values detected')
-%         % interpolation
-%         valid_idx = ~isnan(LFP.data(:,2));
-%         LFP.data(:,1)= interp1(LFP.time(valid_idx),LFP.data(valid_idx,1),LFP.time, 'pchip');
-%         LFP.data(:,2)= interp1(LFP.time(valid_idx),LFP.data(valid_idx,2),LFP.time, 'pchip');
-%     end
-% 
-%      figure(100+r); clf
-%     ax(1) = subplot(2,1,1);
-%     plot(LFP.time, LFP.data(:,2)); hold on; grid on %ch2 microV 
-%     plot(LFP.time, LFP.data(:,1)); hold on; grid on %ch1 microV
-%     title('LFP','fontsize',16)
-%     xlim([LFP.time(1),LFP.time(end)])
-% 
-%     ax(2) = subplot(2,1,2);
-%     plot(EMG.time , EMG.data(:,idx_trig)*10./ nanstd(EMG.data(:,idx_trig)) + 10); grid on; hold on 
-%     plot(EMG.time , EMG.data(:,1)./ nanstd(EMG.data(:,1)) - 10 ); 
-%     plot(EMG.time , EMG.data(:,2)./ nanstd(EMG.data(:,2)) - 5); 
-%     xlim([EMG.time(1),EMG.time(end)])
-% 
-%     plot(EMG.time, Trig{r}, 'k','linewidth',3) % Task-related triggers packed--> marker values
-%     set(gca,'ytick',[-10,-5,20],'yticklabel',EMG.channelNames)
-%     legend('','','','Marker value')
-%     % set(gcf, 'Position', get(0, 'Screensize'));
-% 
-%     linkaxes(ax,'x')    
-% 
-%     figure
-%     chNum_2plot = 1; % first channel: ZERO_TWO_LEFT
-%     sig4spec = LFP.data(:,chNum_2plot);
-%     sigName = LFP.channel_names(chNum_2plot);
-% 
-%     % SPECTROGRAM PARAMS
-%     fmin            = 5;   % min frequency
-%     fmax            = 130;  % max frequency (120)
-%     window_size     = 0.5; %0.5;  % window size for FFT in s
-%     shift_inc       = 50;  % shift increment in ms
-%     delta_f         = 1;   % frequency increment (in Hz)
-%     n_taper         = 3;   % number of tapers (integer >=1)
-% 
-%     t_par.Fs        = LFP.Fs;
-%     t_par.tapers    = [(n_taper+1)/2 n_taper];
-%     t_par.fpass     = [fmin fmax];
-%     t_par.pad       = nextpow2(2^nextpow2(1/window_size)/delta_f);
-% 
-%     subplot(2,1,1)
-%     [P,T,F] = mtspecgramc(sig4spec,[window_size,shift_inc/1000],t_par);
-%     P       = P';
-%     N_win   = window_size*LFP.Fs;
-%     P       = 2*LFP.Fs/N_win * P;  % P is now in mV^2/Hz
-%     T =  LFP.time(1)+T; % translation according to LFP time
-% 
-%     %P = ( P )./median(P,2);
-%     %P = zscore(P,0,2);
-% 
-%     ax(2) = subplot(2,1,1);
-%     imagesc(T,F,10*log(P)); hold on;
-%     axis xy; ylabel('Frequency (Hz)'); title(sigName,'fontsize',13,'interpreter','none')
-%     set(gca,'ylim',[5 130]); caxis([-35 5])
-%     plot([0 LFP.time(end)],[20 20],'w--')
-%     plot([0 LFP.time(end)],[30 30],'w--')
-%     pause(1)
-% 
-%     chNum_2plot = 2; % first channel: ZERO_TWO_LEFT
-%     sig4spec = LFP.data(:,chNum_2plot);
-%     sigName = LFP.channel_names(chNum_2plot);
-% 
-%     subplot(2,1,2)
-%     [P,T,F] = mtspecgramc(sig4spec,[window_size,shift_inc/1000],t_par);
-%     P       = P';
-%     N_win   = window_size*LFP.Fs;
-%     P       = 2*LFP.Fs/N_win * P;  % P is now in mV^2/Hz
-%     T =  LFP.time(1)+T; % translation according to LFP time
-% 
-%     %P = ( P )./median(P,2);
-%     %P = zscore(P,0,2);
-% 
-%     ax(2) = subplot(2,1,2);
-%     imagesc(T,F,10*log(P)); hold on;
-%     axis xy; ylabel('Frequency (Hz)'); title(sigName,'fontsize',13,'interpreter','none')
-%     set(gca,'ylim',[5 130]); caxis([-35 5])
-%     plot([0 LFP.time(end)],[20 20],'w--')
-%     plot([0 LFP.time(end)],[30 30],'w--')
-%     pause(1)
+    if( max(ismember(EMG.channelNames,'trig_A' ))==1 )
+        idx_trig = find( strcmpi( EMG.channelNames,'trig_A' ));
+    elseif ( max(ismember(EMG.channelNames,'Trig_A' ))==1 )
+        idx_trig = find( strcmpi( EMG.channelNames,'Trig_A' ));
+    end
+
+    % check for NaN value
+    NaNidx = find(isnan(LFP.data(:,1)));
+    if ~isempty(NaNidx) 
+        disp('Warning NaN values detected')
+        % interpolation
+        valid_idx = ~isnan(LFP.data(:,2));
+        LFP.data(:,1)= interp1(LFP.time(valid_idx),LFP.data(valid_idx,1),LFP.time, 'pchip');
+        LFP.data(:,2)= interp1(LFP.time(valid_idx),LFP.data(valid_idx,2),LFP.time, 'pchip');
+    end
+
+    % figure(100+r); clf
+    ax(1) = subplot(2,1,1);
+    plot(LFP.time, LFP.data(:,2)); hold on; grid on %ch2 microV 
+    plot(LFP.time, LFP.data(:,1)); hold on; grid on %ch1 microV
+    title('LFP','fontsize',16)
+    xlim([LFP.time(1),LFP.time(end)])
+
+    ax(2) = subplot(2,1,2);
+    plot(EMG.time , EMG.data(:,idx_trig)*10./ std(EMG.data(:,idx_trig)) + 10); grid on; hold on 
+    plot(EMG.time , EMG.data(:,1)./ std(EMG.data(:,1)) - 10 ); 
+    plot(EMG.time , EMG.data(:,2)./ std(EMG.data(:,2)) - 5); 
+    xlim([EMG.time(1),EMG.time(end)])
+
+    plot(EMG.time, Trig{r}, 'k','linewidth',3) % Task-related triggers packed--> marker values
+    set(gca,'ytick',[-10,-5,20],'yticklabel',EMG.channelNames)
+    legend('','','','Marker value')
+    % set(gcf, 'Position', get(0, 'Screensize'));
+
+    linkaxes(ax,'x')    
+
+    figure
+    chNum_2plot = 1; % first channel: ZERO_TWO_LEFT
+    sig4spec = LFP.data(:,chNum_2plot);
+    sigName = LFP.channel_names(chNum_2plot);
+
+    % SPECTROGRAM PARAMS
+    fmin            = 5;   % min frequency
+    fmax            = 130;  % max frequency (120)
+    window_size     = 0.5; %0.5;  % window size for FFT in s
+    shift_inc       = 50;  % shift increment in ms
+    delta_f         = 1;   % frequency increment (in Hz)
+    n_taper         = 3;   % number of tapers (integer >=1)
+
+    t_par.Fs        = LFP.Fs;
+    t_par.tapers    = [(n_taper+1)/2 n_taper];
+    t_par.fpass     = [fmin fmax];
+    t_par.pad       = nextpow2(2^nextpow2(1/window_size)/delta_f);
+
+    subplot(2,1,1)
+    [P,T,F] = mtspecgramc(sig4spec,[window_size,shift_inc/1000],t_par);
+    P       = P';
+    N_win   = window_size*LFP.Fs;
+    P       = 2*LFP.Fs/N_win * P;  % P is now in mV^2/Hz
+    T =  LFP.time(1)+T; % translation according to LFP time
+
+    %P = ( P )./median(P,2);
+    %P = zscore(P,0,2);
+
+    ax(2) = subplot(2,1,1);
+    imagesc(T,F,10*log(P)); hold on;
+    axis xy; ylabel('Frequency (Hz)'); title(sigName,'fontsize',13,'interpreter','none')
+    set(gca,'ylim',[5 130]); caxis([-35 5])
+    plot([0 LFP.time(end)],[20 20],'w--')
+    plot([0 LFP.time(end)],[30 30],'w--')
+    pause(1)
+
+    chNum_2plot = 2; % second channel: ZERO_TWO_RIGHT
+    sig4spec = LFP.data(:,chNum_2plot);
+    sigName = LFP.channel_names(chNum_2plot);
+
+    subplot(2,1,2)
+    [P,T,F] = mtspecgramc(sig4spec,[window_size,shift_inc/1000],t_par);
+    P       = P';
+    N_win   = window_size*LFP.Fs;
+    P       = 2*LFP.Fs/N_win * P;  % P is now in mV^2/Hz
+    T =  LFP.time(1)+T; % translation according to LFP time
+
+    % P = ( P )./median(P,2);
+    % P = zscore(P,0,2);
+
+    ax(2) = subplot(2,1,2);
+    imagesc(T,F,10*log(P)); hold on;
+    axis xy; ylabel('Frequency (Hz)'); title(sigName,'fontsize',13,'interpreter','none')
+    set(gca,'ylim',[5 130]); caxis([-35 5])
+    plot([0 LFP.time(end)],[20 20],'w--')
+    plot([0 LFP.time(end)],[30 30],'w--')
+    pause(1)
 
     %% Define phases of interest
 
@@ -227,8 +228,8 @@ for r = 1:length(run)
 %     LFP_cut.data = LFP_cut.data(1 : 70300, :);
 %     LFP_cut.time = 1/LFP_cut.Fs : 1/LFP_cut.Fs : size(LFP_cut.data, 1)/LFP_cut.Fs;
     
-
     [LFP_filtered, TI_info{r}] = clean_artifacts(LFP, TI_info{r}, tag);
+
     LFP_run{r} = LFP_filtered;
     if ~isempty(fields(TI_info{r}))
         TableBehavior{r}.TI_sequence = repelem({TI_info{r}.TIsequence_alignedToTrigger}, size(TableBehavior{r}, 1))';
@@ -254,21 +255,19 @@ for r = 1:length(run)
                      'VariableNames', Indexes_LFP_referred{1}.Properties.VariableNames);
 
 %     TableOffset.Intertrial = [+1 0]; % [+-x +-y] to remove/add seconds at the beginning or end of the phase 
-    TableOffset.PrepDM = {-0.8 [] 'From2'}; % baseline!!!!!!!!
-    TableOffset.DM_PreYN = {[] +0.5 'From1'};
+    % TableOffset.PrepDM = {-0.8 [] 'From2'}; % baseline!!!!!!!!
+    % TableOffset.DM_PreYN = {[] +0.5 'From1'};
 %     TableOffset.DM_PreYN = {[] +0.7 'From1'}; % i2 will be i1+750ms
 %     TableOffset.DM_PreYN = {-0.4 [] 'From2'}; 
     % TableOffset.DM_PostYN = {[] +1.1 'From1'}; % i2 will be i1+500ms
-    TableOffset.DM_PostYN = [0 +1]; 
+    % TableOffset.DM_PostYN = [0 +1]; 
 
     % TableOffset.Intertrial = {-0.8 [] 'From2'}; % i1 will be i2-2s
     % TableOffset.PrepEP = {-1 [] 'From2'}; % i1 will be i2-1s
     % TableOffset.EP = {[] +1 'From1'}; % i2 will be i1+8s
     % TableOffset.Feedb = {[] +1 'From1'}; % i2 will be i1+1s
 
-
     Modified_Indexes_LFP_referred{r} = modify_phase_indexes(Indexes_LFP_referred{r}, LFP_run{r}, TableOffset);
-
 %     TableOffset = table('Size', [1 size(Indexes_LFP_referred{1}, 2)], ...
 %                  'VariableTypes', repmat({'cell'}, 1, size(Indexes_LFP_referred{1},2)), ...
 %                  'VariableNames', Indexes_LFP_referred{1}.Properties.VariableNames);
@@ -318,14 +317,14 @@ for r = 1:length(run)
 
     %% Power computation through FIR+Hilbert and segmentation
 
-    FrequencyLimits = [3 6; 6 8; 8 12; 13 30; 30 100]; %; 7 12; 12 30; 30 80]; %[3 8; 8 12; 12 30; 30 100];
+    FrequencyLimits = [3 8; 8 12; 12 30; 30 100]; % [3 6; 6 8; 8 12; 13 30; 30 100]; %; 7 12; 12 30; 30 80];
     FrequencyLimits(:,1) = FrequencyLimits(:,1) - 0.25;
     FrequencyLimits(:,2) = FrequencyLimits(:,2) + 0.25;
-    FrequencyLabels = {'Theta', 'HighTheta', 'Alpha', 'Beta', 'Gamma'}; %, 'Alpha', 'Beta', 'Gamma'};
+    FrequencyLabels = {'Theta', 'Alpha', 'Beta', 'Gamma'}; % 'HighTheta', 'Alpha', 'Beta', 'Gamma'}; %, 
     
     Flag_plot_filter = 0;
     StructPowerHilbert = compute_hilbert_power(LFP_run{r}, FrequencyLimits, FrequencyLabels, Flag_plot_filter);
-  
+    disp(length(LFP_run))
 
     for freq_idx = 1:size(FrequencyLimits,1)
         struct_fieldnames = fieldnames(StructPowerHilbert);
@@ -333,7 +332,7 @@ for r = 1:length(run)
         StructPowerHilbertSegmented = LFP_recording_segmentation(StructPowerHilbert.(struct_fieldnames{freq_idx}), Modified_Indexes_LFP_referred{r});
         
         % Normalisation
-        [StructPowerHilbertSegmented_norm, idxTrialsWoBaseline] = normalize_power(StructPowerHilbertSegmented, 'TrialByTrial', 'PrepDM');
+        [StructPowerHilbertSegmented_norm, idxTrialsWoBaseline] = normalize_power(StructPowerHilbertSegmented, 'TrialByTrial', 'B1');
 
         
         eval([tablename '{r} = StructPowerHilbertSegmented_norm;']);
@@ -353,23 +352,136 @@ All_TableBehavior = vertcat(TableBehavior{:});
 % All_TableScalogram_CWT_norm = vertcat(TableScalogram_CWT_norm{:});
 % All_TableSquaredScalogram_CWT_norm = vertcat(TableSquaredScalogram_CWT_norm{:});
 All_Modified_Indexes_LFP_referred = vertcat(Modified_Indexes_LFP_referred{:});
-% All_TablePowerHilbertAlpha = vertcat(TablePowerHilbertAlpha{:});
-% All_TablePowerHilbertBeta = vertcat(TablePowerHilbertBeta{:});
-% All_TablePowerHilbertGamma = vertcat(TablePowerHilbertGamma{:});
+All_TablePowerHilbertAlpha = vertcat(TablePowerHilbertAlpha{:});
+All_TablePowerHilbertBeta = vertcat(TablePowerHilbertBeta{:});
+All_TablePowerHilbertGamma = vertcat(TablePowerHilbertGamma{:});
 All_TablePowerHilbertTheta = vertcat(TablePowerHilbertTheta{:});
 
-
 All_TablePowerHilbertTheta_behav = horzcat(All_TableBehavior, All_TablePowerHilbertTheta);
-
-
 %% Delete trials (e.g. baseline corrupted)
 
 % Deleting trials having DT<0.5s
-All_TablePowerHilbertTheta_behav(All_TablePowerHilbertTheta_behav.DecisionTime < 0.5, :) = [];
+% All_TablePowerHilbertTheta_behav(All_TablePowerHilbertTheta_behav.DecisionTime < 0.5, :) = [];
+% 
+% % Deleting trials in which the decision was anticipated / not made in time
+% All_TablePowerHilbertTheta_behav(All_TablePowerHilbertTheta_behav.Acceptance == -1, :) = [];
+% All_TablePowerHilbertTheta_behav(All_TablePowerHilbertTheta_behav.AnticipationDM == 1, :) = [];
 
-% Deleting trials in which the decision was anticipated / not made in time
-All_TablePowerHilbertTheta_behav(All_TablePowerHilbertTheta_behav.Acceptance == -1, :) = [];
-All_TablePowerHilbertTheta_behav(All_TablePowerHilbertTheta_behav.AnticipationDM == 1, :) = [];
+%% 
+
+TablePower = All_TablePowerHilbertTheta_behav;
+
+TablePower.B0_Lhem = arrayfun(@(i) TablePower.B0{i}(1,1), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.BO_Rhem = arrayfun(@(i) TablePower.B0{i}(1,2), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.Stim1_Lhem = arrayfun(@(i) TablePower.Stim1{i}(1,1), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.Stim1_Rhem = arrayfun(@(i) TablePower.Stim1{i}(1,2), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.B1_Lhem = arrayfun(@(i) TablePower.B1{i}(1,1), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.B1_Rhem = arrayfun(@(i) TablePower.B1{i}(1,2), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.Stim2_Lhem = arrayfun(@(i) TablePower.Stim2{i}(1,1), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.Stim2_Rhem = arrayfun(@(i) TablePower.Stim2{i}(1,2), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.B2_Lhem = arrayfun(@(i) TablePower.B2{i}(1,1), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+TablePower.B2_Rhem = arrayfun(@(i) TablePower.B2{i}(1,2), ...
+        (1:height(TablePower))', 'UniformOutput', false);
+
+%% Instantaneous Power
+
+% Example data (replace with your X)
+freq = 'Gamma'; % Beta Gamma Theta
+PowerFreqData= eval(['All_TablePowerHilbert' freq]);
+
+
+% Columns to plot (1 or 2)
+columns_to_plot = [1 2];
+
+% Loop over the columns to create 2 plots
+for c = 1:2
+    figure;
+    hold on
+    for row = 1:4 
+        % Concatenate all 5 arrays in this row
+        concat_data = [];
+        for col = 1:5
+            concat_data = [concat_data; PowerFreqData{row,col}{1}];  % vertical concatenation
+        end
+        
+        % Plot the selected column
+        Time = linspace(0, 3.5, length(concat_data(:, columns_to_plot(c))));
+        plot(Time, concat_data(:, columns_to_plot(c)), 'LineWidth', 2);
+
+    end
+    hold off
+    title(['Instantaneous Power - ' char(freq) ' Band - ' num2str(columns_to_plot(c))]);
+    xline([0.5, 1.5, 2.0, 3.0], 'w--', 'LineWidth', 1)    
+    legend('iTBS','HF','cTBS','Sham', '', '', '', '')
+
+end
+
+
+%% TEST
+
+for row = 1:4
+    for col = [2 4]   % or [3 5]
+        sig = PowerFreqData{row,col}{1};
+        fprintf('Row %d, Col %d -> length = %d\n', row, col, size(sig,1));
+    end
+end
+%% TEST
+
+freq = 'Gamma'; % Beta Gamma Theta
+PowerFreqData = eval(['All_TablePowerHilbert' freq]);
+
+% Groups: average col 2+4, average col 3+5
+groups = {[2 4], [3 5]};
+group_titles = {'Average of ON phases', 'Average of OFF phases'};
+
+for g = 1:length(groups)
+    figure; hold on
+    for row = 1:4
+        % Extract signals for this row/group
+        sigs = cell(1, length(groups{g}));
+        min_len = inf;
+        for k = 1:length(groups{g})
+            col = groups{g}(k);
+            sigs{k} = PowerFreqData{row,col}{1}(:,1);
+            min_len = min(min_len, length(sigs{k}));
+        end
+
+        % Truncate all signals to the shortest length
+        truncated_sigs = zeros(min_len, length(sigs));
+        for k = 1:length(sigs)
+            truncated_sigs(:,k) = sigs{k}(1:min_len);
+        end
+
+        % Average across the selected signals
+        avg_data = mean(truncated_sigs, 2);
+
+        % Time vector
+        Time = linspace(0, 3.5, min_len);
+        plot(Time, avg_data, 'LineWidth', 2);
+    end
+    hold off
+    title(['Instantaneous Power - ' char(freq) ' Band - ' group_titles{g}]);
+    legend('iTBS','HF','cTBS','Sham', '', '', '', '')
+end
+
 
 
 %% Metrics computation: Power@DMade 
@@ -2094,6 +2206,20 @@ Average_Trains = mean(All_Trains, 2);
 figure
 plot(Average_Trains')
 
+%% Instantaneous Power computed with hilbert transform
 
+FrequencyLimits = [3 7; 7 12; 12 30; 30 80];
+FrequencyLabels = {'Theta', 'Alpha', 'Beta', 'Gamma'};
+NamePhasesOfInterest = {'FullSignal'};
 
+[TablePower_mean_SE_subset1, TablePower_band_single_trial_subset1] = compute_band_average_power(TableInstantaneousPower_Hilbert_norm_subset{1}, FrequencyLimits, FrequencyLabels);
 
+[TablePower_mean_SE_subset2, TablePower_band_single_trial_subset2] = compute_band_average_power(TableInstantaneousPower_Hilbert_norm_subset{2}, FrequencyLimits, FrequencyLabels);
+
+plot_band_average_power({TablePower_mean_SE_subset1, TablePower_mean_SE_subset2}, NameBehavCondition, NamePhasesOfInterest, {TablePower_band_single_trial_subset1, TablePower_band_single_trial_subset2})
+
+% For behavioral subsets
+[TableSpectrogram_average_subset1, TableSpectrogram__SE_subset1, N1] = compute_band_average_spectrogram(TableInstantaneousPower_Hilbert_norm_subset{1}, FrequencyLimits, FrequencyLabels);
+[TableSpectrogram_average_subset2, TableSpectrogram__SE_subset2, N2] = compute_band_average_spectrogram(TableInstantaneousPower_Hilbert_norm_subset{2}, FrequencyLimits, FrequencyLabels);
+
+plot_band_average_spectrogram({TableSpectrogram_average_subset1, TableSpectrogram_average_subset2}, {TableSpectrogram__SE_subset1, TableSpectrogram__SE_subset2}, NameBehavCondition, NamePhasesOfInterest, [N1 N2])

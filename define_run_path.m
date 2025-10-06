@@ -211,15 +211,15 @@ function [behav_data_folder, tag, trig_name, data_folder, behav_data_file_number
                 elseif ismember(Run, 15)
                     tag = 'AM-DBS-180Hz-TI_cTBS'; %cTBS
                 elseif ismember(Run, 16)
-                    tag = 'AM-DBS-180Hz_sham'; %sham
+                    tag = 'AM-DBS-180Hz-TI_sham'; %sham
                 elseif ismember(Run, 17)
-                    tag = 'AM-DBS-180Hz_130'; %130Hz
+                    tag = 'AM-DBS-180Hz-TI_130Hz'; %130Hz
                 end
             end
         end
 
     else
-        error('Specify operator as Simona or Valeria')
+        error('Specify operator as Simona, Valeria or Daniel')
     end
 
 end

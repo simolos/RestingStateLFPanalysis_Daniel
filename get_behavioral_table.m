@@ -16,12 +16,14 @@ function TableBehav = get_behavioral_table(behav, PhaseTag)
     % Created by Simona Losacco on 05/01/2025
 
     if contains(behav.block_name, 'RS')
-        Subj = repelem(behav.SubjectNum, 1)';
-        Phase = repelem({PhaseTag}, 1)';
-        Block = repelem({behav.block_name}, 1)';
+
+        Subj = behav.SubjectNum';
+        Phase = {PhaseTag}';
+        Block = {behav.block_name}';     
+        Trial = 1; % default value
         Duration = 210000; % 3'30'' in ms
-        
-        TableBehav = table(Subj, Phase, Block, Duration);
+
+        TableBehav = table(Subj, Phase, Block, Trial, Duration);
     else
         Subj = repelem(behav.SubjectNum, behav.nTrials)';
         Phase = repelem({PhaseTag}, behav.nTrials)';

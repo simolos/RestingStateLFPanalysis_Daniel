@@ -10,7 +10,7 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
     cTBS_sequence = [Ramp repmat(Train2s, 1, 520/2)];
     HF_sequence = zeros(size(iTBS_sequence));
 
-    if contains(tag, 'iTBS') || contains(tag, 'HF') % HF cleaned as if it was iTBS!! 
+    if contains(tag, 'iTBS') || contains(tag, 'HF') || contains(tag, 'sham') || contains(tag, '130')% HF cleaned as if it was iTBS!! 
         Flag_only_notch = 0;
         TI_sequence = iTBS_sequence;
     elseif contains(tag, 'cTBS')
@@ -245,7 +245,8 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
         % Design notch filter
         Wo = notch_freq / (LFP_filtered.Fs/2);               % Normalize frequency
         BW = bw / (LFP_filtered.Fs/2);               % Normalize bandwidth
-        [b, a] = iirnotch(Wo, BW);      % Design notch filter
+        [b, a] = designNotchPeakIIR(Response="notch",CenterFrequency=Wo,Bandwidth=BW, FilterOrder=2);
+        % [b, a] = iirnotch(Wo, BW);      % Design notch filter
         
         % Apply zero-phase filter
         LFP_filtered.data(:,h) = filtfilt(b, a, LFP_filtered.data(:,h));  % Replace with your variable

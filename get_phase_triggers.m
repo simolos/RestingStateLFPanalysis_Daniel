@@ -74,7 +74,7 @@ function [TableTrig] = get_phase_triggers(EP_flag, behav_table)
         TableTrig{1, 'B2'} = [3, 4];
 
         if contains(behav_table.Phase{1}, 'TI')
-            TableTrig{1, 'TI'} = [11];
+            TableTrig{1, 'TI'} = [1];
         end
 
     end
