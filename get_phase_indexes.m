@@ -55,7 +55,7 @@ function [TableIndexes_LFP_referred, behav_table, TI_struct] = get_phase_indexes
 
         % Create TI structure if TI trigger exists
         if ismember('TI', TableTriggers.Properties.VariableNames)
-            TI_struct.TI_trig_LFP_referred = find( LFP_time >= EMG_time(find(TriggerVector == TableTriggers{1, 'TI'})), 1 );
+            TI_struct.TI_trig_LFP_referred = find(LFP_time >= EMG_time(find(TriggerVector == TableTriggers{1, 'TI'})), 1 );
             behav_table.TI_trigger = repelem(TI_struct.TI_trig_LFP_referred, size(behav_table,1))';
         end
 
@@ -64,7 +64,7 @@ function [TableIndexes_LFP_referred, behav_table, TI_struct] = get_phase_indexes
     
         for i=1:length(StartTrial) % Loop over trials
             
-            disp(i)
+            disp(['Trial ' num2str(i) '/' num2str(length(StartTrial))])
             % Isolate only the triggers in the specific trial window --> double
             % check for missing triggers due to lost connection! No risk of 
             % working on triggers from other trials 

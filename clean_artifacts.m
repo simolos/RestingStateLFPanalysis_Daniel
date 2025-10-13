@@ -1,21 +1,26 @@
 function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
 
     LFP_filtered = LFP;
-
     % Create TI sequence 
-    Ramp = repelem(0, (5*LFP_filtered.Fs) + 1);
+    Ramp = repelem(0, (5*LFP_filtered.Fs));
     Train2s = repmat([repelem(1, round(0.03*LFP_filtered.Fs)) repelem(0, fix((0.2-0.03)*LFP_filtered.Fs))], 1, 10);
     Break8s = repelem(0, 8*LFP_filtered.Fs);
-    iTBS_sequence = [Ramp repmat([Train2s Break8s], 1, 52)];
-    cTBS_sequence = [Ramp repmat(Train2s, 1, 520/2)];
+    delay = repelem(0, 5);
+    %iTBS_sequence = [Ramp repmat([Train2s Break8s], 1, 52)];
+    iTBS_sequence = [repelem(0, round(30*LFP_filtered.Fs) + 1) Ramp repmat([Train2s Break8s], 1, 5) Ramp delay repelem(0, round(30*LFP_filtered.Fs)) Ramp repmat([Train2s Break8s], 1, 5) Ramp repelem(0, round(30*LFP_filtered.Fs))];
+    %cTBS_sequence = [Ramp repmat(Train2s, 1, 520/2)];
+    cTBS_sequence = [repelem(0, round(30*LFP_filtered.Fs) + 1) Ramp repmat(Train2s, 1, 5*5) Ramp delay repelem(0, round(30*LFP_filtered.Fs)) Ramp repmat(Train2s, 1, 5*5) Ramp repelem(0, round(30*LFP_filtered.Fs))];
     HF_sequence = zeros(size(iTBS_sequence));
 
-    if contains(tag, 'iTBS') || contains(tag, 'HF') || contains(tag, 'sham') || contains(tag, '130')% HF cleaned as if it was iTBS!! 
+    if contains(tag, 'iTBS') || contains(tag, 'HF') || contains(tag, 'sham')% HF cleaned as if it was iTBS!! (same for sham)
         Flag_only_notch = 0;
         TI_sequence = iTBS_sequence;
     elseif contains(tag, 'cTBS')
         Flag_only_notch = 0;
         TI_sequence = cTBS_sequence;
+    % elseif contains(tag, 'sham')
+    %     Flag_only_notch = 0;
+    %     TI_sequence = HF_sequence;
     elseif contains(tag, 'DBS') % for OCD --> no filtering at all
         return
     else
@@ -29,7 +34,6 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
     for h = 1:size(LFP_filtered.data,2) % loop over hemispheres
         
         if Flag_only_notch == 0
-
             TIsequence_alignedToTrigger = [zeros(1, TI.TI_trig_LFP_referred + 1) TI_sequence];
 
             % Cut TI_sequence to match the length of LFP
@@ -42,45 +46,46 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
             % figure
             % tiledlayout(2,1,"TileSpacing","tight")
             % nexttile
-            % plot(LFP_filtered.data(:,h), 'r')
+            % plot(linspace(0,  length(LFP_filtered.data(:, h)), length(LFP_filtered.data(:, h))) / LFP_filtered.Fs, LFP_filtered.data(:,h))
             % ylim([-100 100])
             % hold on
-            % xline(TI.TI_trig_LFP_referred, 'b--')
+            % xline(TI.TI_trig_LFP_referred / LFP_filtered.Fs, 'w--')
             % 
             % 
-            % plot((TIsequence_alignedToTrigger*120)-60)
+            % plot(linspace(0,  length(TIsequence_alignedToTrigger), length(TIsequence_alignedToTrigger)) / LFP_filtered.Fs, (TIsequence_alignedToTrigger*120)-60)
                 
             
-            % Find begining and end of each burst of 3 pulses
+            % % Find begining and end of each burst of 3 pulses
             Onsets = find(diff([0 TIsequence_alignedToTrigger]) == 1) - 1; % -1 to find the LAST zero before the artifact!
+            % % disp(unique(TIsequence_alignedToTrigger))
             End = find(diff([TIsequence_alignedToTrigger 0 ]) == -1) + 1;
-            % Superimpose the beginning and end of each burst
-            % xline(Onsets, 'g')
-            % xline(End, 'r')
-            
-            % Plot spectrogram for original data
+            % % Superimpose the beginning and end of each burst
+            % xline(Onsets / LFP_filtered.Fs, 'g')
+            % xline(End / LFP_filtered.Fs, 'r')
+
+            % % Plot spectrogram for original data
             % figure
             % sgtitle('Original data')
-            % COMPats_PERCEPT_plot_BS(LFP_filtered,[],0,1)
-            
-            % Plot spectrum for original data
-            T = 1/LFP_filtered.Fs;              
-            L = fix(size(LFP_filtered.data, 1))-1;             
-            t = (0:L-1)*T;        
-            
+            % % COMPats_PERCEPT_plot_BS(LFP_filtered,[],0,1)
+            % 
+            % % Plot spectrum for original data
+            % T = 1/LFP_filtered.Fs;              
+            % L = fix(size(LFP_filtered.data, 1))-1;             
+            % t = (0:L-1)*T;        
+            % 
             % figure
             % nexttile
-            Y_left = fft(LFP_filtered.data(:,h));
-            P2_left = abs(Y_left/L);
-            P1_left = P2_left(1:L/2+1);
-            P1_left(2:end-1) = 2*P1_left(2:end-1);
-            f = LFP_filtered.Fs*(0:(L/2))/L;
+            % Y_left = fft(LFP_filtered.data(:,h));
+            % P2_left = abs(Y_left/L);
+            % P1_left = P2_left(1:L/2+1);
+            % P1_left(2:end-1) = 2*P1_left(2:end-1);
+            % f = LFP_filtered.Fs*(0:(L/2))/L;
             % plot(f,P1_left, 'r') 
             % ylim([0 2])
             % hold on
             % title(sprintf("%s - Original data", LFP_filtered.channel_names{h}))
             % xlabel("f (Hz)")
-            % ylabel("|P1(f)|") 
+            % % ylabel("|P1(f)|") 
             
             
         
@@ -108,8 +113,9 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
 
                     % Mirror and taper the segments
                     Length_taper = size(SignalBeforeArtifact, 1);
+                    %SignalBeforeArtifact_flipped_and_tapered = flip(SignalBeforeArtifact)' .* linspace(1, 0, Length_taper);
                     SignalBeforeArtifact_flipped_and_tapered = flip(SignalBeforeArtifact)' .* linspace(1, 0, Length_taper);
-                    SignalAfterArtifact_flipped_and_tapered = flip(MeanAfterArtifact)' .* linspace(0, 1, Length_taper);
+                    SignalAfterArtifact_flipped_and_tapered = flip(SignalAfterArtifact)' .* linspace(0, 1, Length_taper);
 
 
         
@@ -123,15 +129,16 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
 
 
                     % ReplacementSignal = flip(ReplacementSignal);
-        
-%                     figure
-%                     plot(SignalBeforeArtifact, 'b')
-%                     hold on
-%                     plot(SignalAfterArtifact, 'k')
-%                     plot(SignalDuringArtifact, 'g')
-%                     plot(ReplacementSignal, 'r')
-%                     legend('Before', 'After', 'True', 'Replacement')
-%             
+                    % if i < 3
+                    %     figure
+                    %     plot(SignalBeforeArtifact, 'b')
+                    %     hold on
+                    %     plot(SignalAfterArtifact, 'c')
+                    %     plot(SignalDuringArtifact, 'g')
+                    %     plot(ReplacementSignal, 'r')
+                    %     legend('Before', 'After', 'True', 'Replacement')
+                    % end
+%              
         
                     % AvgTemplate_L_hemisphere
         %             scale = ((p2pBeforeArtifact+p2pAfterArtifact)/2) / p2pDuringArtifact;
@@ -156,27 +163,27 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
             % figure
             % sgtitle('After synthetic paste')
             % COMPats_PERCEPT_plot_BS(LFP_filtered,[],0,1)
-            
-            % Plot spectrum for filtered data - after syntetic signal paste
-            T = 1/LFP_filtered.Fs;             % Sampling period       
-            L = fix(size(LFP_filtered.data, 1))-1;             % Length of signal
-            t = (0:L-1)*T;        % Time vector
-            
+            % 
+            % % Plot spectrum for filtered data - after syntetic signal paste
+            % T = 1/LFP_filtered.Fs;             % Sampling period       
+            % L = fix(size(LFP_filtered.data, 1))-1;             % Length of signal
+            % t = (0:L-1)*T;        % Time vector
+            % 
             % figure
             % nexttile
-            Y_left = fft(LFP_filtered.data(:,h));
-            P2_left = abs(Y_left/L);
-            P1_left = P2_left(1:L/2+1);
-            P1_left(2:end-1) = 2*P1_left(2:end-1);
-            f = LFP_filtered.Fs*(0:(L/2))/L;
+            % Y_left = fft(LFP_filtered.data(:,h));
+            % P2_left = abs(Y_left/L);
+            % P1_left = P2_left(1:L/2+1);
+            % P1_left(2:end-1) = 2*P1_left(2:end-1);
+            % f = LFP_filtered.Fs*(0:(L/2))/L;
             % plot(f,P1_left, 'k') 
             % ylim([0 2])
             % hold on
             % title(sprintf("%s - After syntetic paste", LFP_filtered.channel_names{h}))
             % xlabel("f (Hz)")
             % ylabel("|P1(f)|") 
-
-            % Plot raw signal and cleaned one
+            % 
+            % % Plot raw signal and cleaned one
             % figure
             % tiledlayout(2,1,"TileSpacing","tight")
             % nexttile
@@ -192,8 +199,8 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
             Onsets = find(diff([0 TIsequence_alignedToTrigger]) == 1) - 1; % -1 to find the LAST zero before the artifact!
             End = find(diff([TIsequence_alignedToTrigger 0 ]) == -1) + 1;
             % Superimpose the beginning and end of each burst
-            % xline(Onsets, 'g')
-            % xline(End, 'r')
+            xline(Onsets, 'g')
+            xline(End, 'r')
            
 
             
