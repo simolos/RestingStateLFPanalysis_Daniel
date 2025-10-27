@@ -245,7 +245,6 @@ end
 
 
 %%
-test = {'B0', 'B0', 'B1', 'B1', 'B2'};
 for r = 1:length(run)
  
     %%%%%%%%%
@@ -333,7 +332,8 @@ for r = 1:length(run)
         StructPowerHilbertSegmented = LFP_recording_segmentation(StructPowerHilbert.(struct_fieldnames{freq_idx}), Modified_Indexes_LFP_referred{r});
         
         % Normalisation
-        [StructPowerHilbertSegmented_norm, idxTrialsWoBaseline] = normalize_power(StructPowerHilbertSegmented, 'Test', test);
+        %[StructPowerHilbertSegmented_norm, idxTrialsWoBaseline] = normalize_power(StructPowerHilbertSegmented, 'TrialByTrial', "B0");
+        [StructPowerHilbertSegmented_norm, idxTrialsWoBaseline] = normalize_power(StructPowerHilbertSegmented, 'OFF_Phases', "");
         % StructPowerHilbertSegmented_norm = StructPowerHilbertSegmented;
         
         % Save back to variable using dynamic name
@@ -450,20 +450,21 @@ end
 % Define x positions and labels
 x = 1:5;
 phase_labels = {'OFF0', 'ON1', 'OFF1', 'ON2', 'OFF2'};
-run_labels = {'iTBS', 'HF', 'cTBS', 'Sham'};
+run_labels = {'iTBS', 'HF'};
 
 % New x positions for the two mean points
 x_means = [1, 2];
 
-
+runs = struct('iTBS', 1, 'HF', 2, 'cTBS', 3, 'sham', 4);
 
 % Loop through each side
 for s = 1:length(sides)
     figure;
     hold on
-    for row = 1:2
-        y = squeeze(averages(s, row, :));
-        scatter(x, y, 50, 'filled', 'DisplayName', run_labels{row});
+    for r = 1:length(run_labels)
+        row = runs.(run_labels{r});
+        y = squeeze(averages(sides(s), row, :));
+        scatter(x, y, 50, 'filled', 'DisplayName', run_labels{r});
     end
     hold off
     xticks(x)
@@ -477,17 +478,18 @@ for s = 1:length(sides)
     % New figure for summary points only
     figure;
     hold on
-    for row = 1:2
-        y = squeeze(averages(s, row, :));
-        summary1 = mean(y([2,4])); % average of phase 2 and 4
-        summary2 = mean(y([3,5])); % average of phase 3 and 5
+    for r = 1:length(run_labels)
+        row = runs.(run_labels{r});
+        y = squeeze(averages(sides(s), row, :));
+        mean_ON = mean(y([2, 4])); % average of ON Phases
+        mean_OFF = mean(y([1, 3, 5])); % average of OFF Phases
         
         % Scatter summary points
-        scatter(x_summary, [summary1, summary2], 100, 'filled', 'filled', ...
-                'DisplayName', run_labels{row});
+        scatter(x_means, [mean_ON, mean_OFF], 100, 'filled', 'filled', ...
+                'DisplayName', run_labels{r});
     end
     hold off
-    xticks(x_summary)
+    xticks(x_means)
     xticklabels({'Avg of ON-Phases', 'Avg of OFF-Phases'})
     xlim([0, 3])
     xlabel('Average ON/OFF')
@@ -555,51 +557,102 @@ for g = 1:length(groups)
 end
 
 
+%% Function to estimate PSD
+
+function [pxx_mean, f] = computeLFP_PSD(LFP_data, fs, seg_len_sec, smoothing, freq_band)
+% computeLFP_PSD Compute PSD of LFP using segmented Hanning tapers
+%
+% INPUTS:
+%   LFP_data    - numeric vector, the LFP signal (single channel)
+%   fs          - sampling frequency in Hz
+%   seg_len_sec - segment length in seconds
+%   smoothing   - smoothing in Hz (used to determine number of tapers)
+%   freq_band   - 2-element vector [low high] in Hz for bandpass filtering
+%
+% OUTPUTS:
+%   pxx_mean    - mean PSD across segments
+%   f           - frequency vector
+
+    % Parameters
+    seg_len = seg_len_sec * fs;                     % samples per segment
+    nfft = 2^nextpow2(seg_len*2);                  % zero-padding for resolution
+    num_tapers = round(smoothing/(1/seg_len));     % number of Hanning tapers
+
+    % Filtering
+    [b, a] = butter(2, freq_band/(fs/2), 'bandpass');
+    lfp = filtfilt(b, a, double(LFP_data(:)));    % ensure column vector
+
+    % Segment signal
+    num_segments = floor(length(lfp)/seg_len);
+    pxx_all = zeros(nfft, num_segments);
+
+    for seg_idx = 1:num_segments
+        seg = lfp((seg_idx-1)*seg_len+1 : seg_idx*seg_len);
+
+        seg_psd = zeros(nfft,1);
+
+        for k = 1:num_tapers
+            % Offset Hanning taper
+            offset = (k-1)/(num_tapers*2);
+            n = (0:seg_len-1)/seg_len;
+            w = 0.5*(1 - cos(2*pi*(n + offset)));
+
+            % FFT and PSD
+            X = fft(seg(:).*w(:), nfft);
+            seg_psd = seg_psd + (abs(X).^2)/sum(w.^2);
+        end
+
+        % Average over tapers
+        seg_psd = seg_psd / num_tapers;
+
+        pxx_all(:,seg_idx) = seg_psd;
+    end
+
+    % Average across segments
+    pxx_mean = mean(pxx_all,2);
+    f = (0:nfft-1)*(fs/nfft);
+
+end
 %% TEST
 
-%% Parameters
-fs = 250;                % Sampling frequency
-seg_len = 2*fs;           % 2-second segments
-nfft = 2^nextpow2(seg_len*2); % zero-padding for 0.25 Hz resolution
-smoothing = 2;            % 2 Hz smoothing
-num_tapers = round(smoothing/(1/seg_len)); % number of Hanning tapers
+run_labels = {'iTBS', 'HF'};
+phases = {'B0', 'Stim1', 'B1', 'Stim2', 'B2'};
+psds = cell(length(run_labels), 5, 2);
+freqs = cell(length(run_labels), 5, 2);
 
-%% Filtering
+fs = 250;
+seg_len_sec = 2;
+smoothing = 2;
+freq_band = [1 100];
 
-[b, a] = butter(2, [1 100]/(fs/2), 'bandpass');
-lfp = filtfilt(b, a, double(LFP_run{1}.data(:,1)));
-
-%% Segment signal
-num_segments = floor(length(lfp)/seg_len);
-pxx_all = zeros(nfft,num_segments);
-
-for seg_idx = 1:num_segments
-    seg = lfp((seg_idx-1)*seg_len+1 : seg_idx*seg_len);
-    
-    seg_psd = zeros(nfft,1);
-    
-    for k = 1:num_tapers
-        % Create offset Hanning taper
-        offset = (k-1)/(num_tapers*2);      % fractional offset
-        n = (0:seg_len-1)/seg_len;
-        w = 0.5*(1 - cos(2*pi*(n + offset)));
-        
-        % FFT and PSD
-        X = fft(seg(:).*w(:), nfft);
-        seg_psd = seg_psd + (abs(X).^2)/sum(w.^2);
+for s = 1:length(sides)
+    for p = 1:length(phases)
+        colName = phases{p};
+        for r = 1:length(run_labels)
+            row = runs.(run_labels{r});
+            % Extract LFP for this side
+            data = TableLFP{row}.(colName){1}(:, sides(s));
+            % Compute PSD
+            [psd, freq] = computeLFP_PSD(data, fs, seg_len_sec, smoothing, freq_band);
+            % Store results
+            psds{r,p,s} = psd(:);
+            freqs{r,p,s} = freq(:);
+            % Plot for this run
+            plot(freq, 10*log10(psd), 'LineWidth', 2, 'DisplayName', run_labels{r});
+        end
     end
-    
-    % Average over tapers
-    seg_psd = seg_psd / num_tapers;
-    
-    pxx_all(:,seg_idx) = seg_psd;
 end
 
-%% Average across segments
-pxx_mean = mean(pxx_all,2);
-f = (0:nfft-1)*(fs/nfft);
+%% Plot per Phases
+
+for p =1:5
+    
+
+
 
 %% Plot
+[pxx_mean, f] = computeLFP_PSD(double(LFP_run{1}.data(:,1)), fs, 2, smoothing, [1 100]);
+
 figure;
 plot(f,10*log10(pxx_mean));
 xlim([0 100]);

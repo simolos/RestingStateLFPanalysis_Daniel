@@ -557,50 +557,190 @@ for g = 1:length(groups)
 end
 
 
+%% Function to estimate PSD
+
+function [pxx_mean, f] = computeLFP_PSD(LFP_data, fs, seg_len_sec, smoothing, freq_band)
+% computeLFP_PSD Compute PSD of LFP using segmented Hanning tapers
+%
+% INPUTS:
+%   LFP_data    - numeric vector, the LFP signal (single channel)
+%   fs          - sampling frequency in Hz
+%   seg_len_sec - segment length in seconds
+%   smoothing   - smoothing in Hz (used to determine number of tapers)
+%   freq_band   - 2-element vector [low high] in Hz for bandpass filtering
+%
+% OUTPUTS:
+%   pxx_mean    - mean PSD across segments
+%   f           - frequency vector
+
+    % Parameters
+    seg_len = seg_len_sec * fs;                     % samples per segment
+    nfft = 2^nextpow2(seg_len*2);                  % zero-padding for resolution
+    num_tapers = round(smoothing/(1/seg_len));     % number of Hanning tapers
+
+    % Filtering
+    [b, a] = butter(2, freq_band/(fs/2), 'bandpass');
+    lfp = filtfilt(b, a, double(LFP_data(:)));    % ensure column vector
+
+    % Segment signal
+    num_segments = floor(length(lfp)/seg_len);
+    pxx_all = zeros(nfft, num_segments);
+
+    for seg_idx = 1:num_segments
+        seg = lfp((seg_idx-1)*seg_len+1 : seg_idx*seg_len);
+
+        seg_psd = zeros(nfft,1);
+
+        for k = 1:num_tapers
+            % Offset Hanning taper
+            offset = (k-1)/(num_tapers*2);
+            n = (0:seg_len-1)/seg_len;
+            w = 0.5*(1 - cos(2*pi*(n + offset)));
+
+            % FFT and PSD
+            X = fft(seg(:).*w(:), nfft);
+            seg_psd = seg_psd + (abs(X).^2)/sum(w.^2);
+        end
+
+        % Average over tapers
+        seg_psd = seg_psd / num_tapers;
+
+        pxx_all(:,seg_idx) = seg_psd;
+    end
+
+    % Average across segments
+    pxx_mean = mean(pxx_all,2);
+    f = (0:nfft-1)*(fs/nfft);
+
+end
 %% TEST
 
-%Parameters
-fs = 250;                % Sampling frequency
-seg_len = 2*fs;           % 2-second segments
-nfft = 2^nextpow2(seg_len*2); % zero-padding for 0.25 Hz resolution
-smoothing = 2;            % 2 Hz smoothing
-num_tapers = round(smoothing/(1/seg_len)); % number of Hanning tapers
+run_labels = {'iTBS', 'HF'};
+phases = {'B0', 'Stim1', 'B1', 'Stim2', 'B2'};
+psds = cell(length(run_labels), 5, 2);
+freqs = cell(length(run_labels), 5, 2);
 
-%Filtering
-[b, a] = butter(2, [1 100]/(fs/2), 'bandpass');
-lfp = filtfilt(b, a, double(LFP_run{1}.data(:,1)));
+fs = 250;
+seg_len_sec = 2;
+smoothing = 2;
+freq_band = [1 100];
 
-%Segment signal
-num_segments = floor(length(lfp)/seg_len);
-pxx_all = zeros(nfft,num_segments);
-
-for seg_idx = 1:num_segments
-    seg = lfp((seg_idx-1)*seg_len+1 : seg_idx*seg_len);
-    
-    seg_psd = zeros(nfft,1);
-    
-    for k = 1:num_tapers
-        % Create offset Hanning taper
-        offset = (k-1)/(num_tapers*2);      % fractional offset
-        n = (0:seg_len-1)/seg_len;
-        w = 0.5*(1 - cos(2*pi*(n + offset)));
-        
-        % FFT and PSD
-        X = fft(seg(:).*w(:), nfft);
-        seg_psd = seg_psd + (abs(X).^2)/sum(w.^2);
+for s = 1:length(sides)
+    for p = 1:length(phases)
+        colName = phases{p};
+        for r = 1:length(run_labels)
+            row = runs.(run_labels{r});
+            % Extract LFP for this side
+            data = TableLFP{row}.(colName){1}(:, sides(s));
+            % Compute PSD
+            [psd, freq] = computeLFP_PSD(data, fs, seg_len_sec, smoothing, freq_band);
+            % Store results
+            psds{r,p,s} = psd(:);
+            freqs{r,p,s} = freq(:);
+        end
     end
-    
-    % Average over tapers
-    seg_psd = seg_psd / num_tapers;
-    
-    pxx_all(:,seg_idx) = seg_psd;
 end
 
-%Average across segments
-pxx_mean = mean(pxx_all,2);
-f = (0:nfft-1)*(fs/nfft);
+%% Plot per Phases
+
+phases = {'OFF0','ON1','OFF1','ON2','OFF2'};
+run_labels = {'iTBS','HF'};
+sides = [1,2];                  % 1=Left, 2=Right
+sides_name = ["Left","Right"];
+
+for p = 1:length(phases)
+    figure;
+    
+    % --- Top subplot: Left hemisphere ---
+    subplot(2,1,1);
+    hold on;
+    for r = 1:length(run_labels)
+        psd = psds{r, p, 1};      % left side
+        freq = freqs{r, p, 1};
+        plot(freq(:), 10*log10(psd), 'LineWidth', 2, 'DisplayName', run_labels{r});
+    end
+    hold off;
+    xlabel('Frequency (Hz)');
+    ylabel('Power (dB)');
+    title(sprintf('%s - Left Hemisphere', phases{p}));
+    xlim([0 100]);
+    legend('show');
+    grid on;
+
+    % --- Bottom subplot: Right hemisphere ---
+    subplot(2,1,2);
+    hold on;
+    for r = 1:length(run_labels)
+        psd = psds{r, p, 2};      % right side
+        freq = freqs{r, p, 2};
+        plot(freq(:), 10*log10(psd), 'LineWidth', 2, 'DisplayName', run_labels{r});
+    end
+    hold off;
+    xlabel('Frequency (Hz)');
+    ylabel('Power (dB)');
+    title(sprintf('%s - Right Hemisphere', phases{p}));
+    xlim([0 100]);
+    legend('show');
+    grid on;
+end
+
+%% Plot 
+    
+run_labels = {'iTBS','HF'};
+phases_OFF = {1, 3, 5};
+phases_ON = {2 4};
+sides = [1,2];                  % 1=Left, 2=Right
+sides_name = ["Left","Right"];
+
+%% Average OFF phases
+figure;
+for s = 1:length(sides)
+    subplot(2,1,s);
+    hold on;
+    for r = 1:length(run_labels)
+        psd_sum = zeros(size(freqs{r,1,s}));
+        for p_idx = 1:length(phases_OFF)
+            psd_sum = psd_sum + psds{r,phases_OFF{p_idx},s};
+        end
+        psd_avg = psd_sum / num_phases;
+        plot(freqs{r,1,s}(:), 10*log10(psd_avg), 'LineWidth', 2, 'DisplayName', run_labels{r});
+    end
+    hold off;
+    xlabel('Frequency (Hz)');
+    ylabel('Power (dB)');
+    title(sprintf('Average PSD of OFF Phases - %s Hemisphere', sides_name(sides(s))));
+    xlim([0 100]);
+    legend('show');
+    grid on;
+end
+
+%% Average ON phases
+figure;
+for s = 1:length(sides)
+    subplot(2,1,s);
+    hold on;
+    for r = 1:length(run_labels)
+        psd_sum = zeros(size(freqs{r,1,s}));
+        for p_idx = 1:length(phases_ON)
+            psd_sum = psd_sum + psds{r,phases_ON{p_idx},s};
+        end
+        psd_avg = psd_sum / num_phases;
+        plot(freqs{r,1,s}(:), 10*log10(psd_avg), 'LineWidth', 2, 'DisplayName', run_labels{r});
+    end
+    hold off;
+    xlabel('Frequency (Hz)');
+    ylabel('Power (dB)');
+    title(sprintf('Average PSD of ON Phases - %s Hemisphere', sides_name(sides(s))));
+    xlim([0 100]);
+    legend('show');
+    grid on;
+end
+
+
 
 %% Plot
+[pxx_mean, f] = computeLFP_PSD(double(LFP_run{1}.data(:,1)), fs, 2, smoothing, [1 100]);
+
 figure;
 plot(f,10*log10(pxx_mean));
 xlim([0 100]);
