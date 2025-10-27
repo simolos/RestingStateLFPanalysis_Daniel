@@ -128,16 +128,7 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
                     ReplacementSignal = (SignalBeforeArtifact_flipped_and_tapered + SignalAfterArtifact_flipped_and_tapered);
 
 
-                    % ReplacementSignal = flip(ReplacementSignal);
-                    % if i < 3
-                    %     figure
-                    %     plot(SignalBeforeArtifact, 'b')
-                    %     hold on
-                    %     plot(SignalAfterArtifact, 'c')
-                    %     plot(SignalDuringArtifact, 'g')
-                    %     plot(ReplacementSignal, 'r')
-                    %     legend('Before', 'After', 'True', 'Replacement')
-                    % end
+                    % ReplacementSignal = flip(ReplacementSignal)
 %              
         
                     % AvgTemplate_L_hemisphere
@@ -160,9 +151,9 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
 %             end
             
             % Plot spectrogram for filtered data - after syntetic signal paste
-            % figure
-            % sgtitle('After synthetic paste')
-            % COMPats_PERCEPT_plot_BS(LFP_filtered,[],0,1)
+            figure
+            sgtitle('After synthetic paste')
+            COMPats_PERCEPT_plot_BS(LFP_filtered,[],0,1)
             % 
             % % Plot spectrum for filtered data - after syntetic signal paste
             % T = 1/LFP_filtered.Fs;             % Sampling period       
@@ -182,8 +173,8 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
             % title(sprintf("%s - After syntetic paste", LFP_filtered.channel_names{h}))
             % xlabel("f (Hz)")
             % ylabel("|P1(f)|") 
-            % 
-            % % Plot raw signal and cleaned one
+
+            % Plot raw signal and cleaned one
             % figure
             % tiledlayout(2,1,"TileSpacing","tight")
             % nexttile

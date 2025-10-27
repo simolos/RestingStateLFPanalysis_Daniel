@@ -235,9 +235,9 @@ for r = 1:length(run)
     end
 
     % Clear variables before running next loop
-    %clear behav behav_data_folder behav_filename data_folder ...
-    %    EMG fileList fileNames LFP tag Trig trig_name trigger_filename ...
-    %    TriggerInfo idx_behavfilename idxTrialsWoBaseline
+    clear behav behav_data_folder behav_filename data_folder ...
+        EMG fileList fileNames LFP tag Trig trig_name trigger_filename ...
+        TriggerInfo idx_behavfilename idxTrialsWoBaseline
 
 end
 
@@ -332,17 +332,22 @@ for r = 1:length(run)
         StructPowerHilbertSegmented = LFP_recording_segmentation(StructPowerHilbert.(struct_fieldnames{freq_idx}), Modified_Indexes_LFP_referred{r});
         
         % Normalisation
-        % [StructPowerHilbertSegmented_norm, idxTrialsWoBaseline] = normalize_power(StructPowerHilbertSegmented, 'TrialByTrial', 'B1');
-        StructPowerHilbertSegmented_norm = StructPowerHilbertSegmented;
+        %[StructPowerHilbertSegmented_norm, idxTrialsWoBaseline] = normalize_power(StructPowerHilbertSegmented, 'TrialByTrial', "B0");
+        [StructPowerHilbertSegmented_norm, idxTrialsWoBaseline] = normalize_power(StructPowerHilbertSegmented, 'OFF_Phases', "");
+        % StructPowerHilbertSegmented_norm = StructPowerHilbertSegmented;
         
+        % Save back to variable using dynamic name
         eval([tablename '{r} = StructPowerHilbertSegmented_norm;']);
+
+
     end
 
     %% Clear variables before running next loop
-    clear behav behav_data_folder behav_filename data_folder ...
-        EMG fileList fileNames LFP tag trig_name trigger_filename ...
-        TriggerInfo idx_behavfilename idxTrialsWoBaseline StructPowerHilbert
+    %clear behav behav_data_folder behav_filename data_folder ...
+    %    EMG fileList fileNames LFP tag trig_name trigger_filename ...
+    %    TriggerInfo idx_behavfilename idxTrialsWoBaseline StructPowerHilbert
 end % end of the for loop on runs
+
 
 %% Creation of a single table including all runs
 % TablePSD = vertcat(TablePSD{:});
@@ -409,11 +414,12 @@ PowerFreqData= eval(['All_TablePowerHilbert' freq]);
 
 
 % side to plot (1 or 2)
-sides_to_plot = [1 2];
-side = ["Left", "Right"];
+sides = [1 2];
+sides_name = ["Left", "Right"];
+averages = zeros(length(sides), length(run), 5);
 
-% Loop over the columns to create 2 plots
-for c = 1:length(sides_to_plot)%2
+% Loop over the sides to create one plot per side
+for s = 1:length(sides)%1
     figure;
     hold on
     for row = 1:length(run)
@@ -421,27 +427,86 @@ for c = 1:length(sides_to_plot)%2
         concat_data = [];
         for col = 1:5
             concat_data = [concat_data; PowerFreqData{row,col}{1}];  % vertical concatenation
+            averages(s, row, col) = mean(PowerFreqData{row, col}{1}(:, sides(s)));
         end
+
         
         % Plot the selected column
-        Time = linspace(0, 3.5, length(concat_data(:, sides_to_plot(c))));
-        plot(Time, concat_data(:, sides_to_plot(c)), 'LineWidth', 2);
+        Time = linspace(0, 3.5, length(concat_data(:, sides(s))));
+        plot(Time, concat_data(:, sides(s)), 'LineWidth', 2);
 
     end
     hold off
     xlabel("Time (s)")
     ylabel("Power")
-    title(['Instantaneous Power - ' char(freq) ' Band - ' char(side(sides_to_plot(c)))]);
+    title(['Instantaneous Power - ' char(freq) ' Band - ' char(sides_name(sides(s)))]);
     xline([0.5, 1.5, 2.0, 3.0], 'w--', 'LineWidth', 3)    
     legend('iTBS','HF','cTBS','Sham', '', '', '', '')
 
 end
 
+%%
+
+% Define x positions and labels
+x = 1:5;
+phase_labels = {'OFF0', 'ON1', 'OFF1', 'ON2', 'OFF2'};
+run_labels = {'iTBS', 'HF'};
+
+% New x positions for the two mean points
+x_means = [1, 2];
+
+runs = struct('iTBS', 1, 'HF', 2, 'cTBS', 3, 'sham', 4);
+
+% Loop through each side
+for s = 1:length(sides)
+    figure;
+    hold on
+    for r = 1:length(run_labels)
+        row = runs.(run_labels{r});
+        y = squeeze(averages(sides(s), row, :));
+        scatter(x, y, 50, 'filled', 'DisplayName', run_labels{r});
+    end
+    hold off
+    xticks(x)
+    xticklabels(phase_labels)
+    xlabel('Stimulation Phase')
+    ylabel('Average Power')
+    title(['Average ' char(freq) ' Power - ' char(sides_name(sides(s)))])
+    legend('show', 'Location', 'best')
+    grid on
+
+    % New figure for summary points only
+    figure;
+    hold on
+    for r = 1:length(run_labels)
+        row = runs.(run_labels{r});
+        y = squeeze(averages(sides(s), row, :));
+        mean_ON = mean(y([2, 4])); % average of ON Phases
+        mean_OFF = mean(y([1, 3, 5])); % average of OFF Phases
+        
+        % Scatter summary points
+        scatter(x_means, [mean_ON, mean_OFF], 100, 'filled', 'filled', ...
+                'DisplayName', run_labels{r});
+    end
+    hold off
+    xticks(x_means)
+    xticklabels({'Avg of ON-Phases', 'Avg of OFF-Phases'})
+    xlim([0, 3])
+    xlabel('Average ON/OFF')
+    ylabel('Average Power')
+    title(['Comparison of Mean ' char(freq) ' Power Between ON and OFF Phases - ' char(sides_name(sides(s)))])
+    %title(['Summary ' char(freq) ' Power - ' char(sides_name(sides(s)))])
+    legend('show', 'Location', 'best')
+    grid on
+end
+
+
+
 %% Averaged Power
 
 freq = 'Theta'; % Beta Gamma Theta
 PowerFreqData = eval(['All_TablePowerHilbert' freq]);
-side = 1; % 1 = Left, 2 = Right
+sides_name = 1; % 1 = Left, 2 = Right
 groups = {[1 3 5], [2 4]};   % OFF = 1+3+5, ON = 2+4
 group_titles = {'Average of OFF phases', 'Average of ON phases'};
 sides = {'Left', 'Right'};
@@ -454,7 +519,7 @@ for g = 1:length(groups)
     
     for row = 1:length(run)
         % Collect signals
-        sigs = cellfun(@(col) PowerFreqData{row,col}{1}(:,side), ...
+        sigs = cellfun(@(col) PowerFreqData{row,col}{1}(:,sides_name), ...
                        num2cell(groups{g}), 'UniformOutput', false);
 
         % Find minimum length and truncate
@@ -487,129 +552,73 @@ for g = 1:length(groups)
     hold off
     xlabel("Time (s)")
     ylabel("Averaged Power")
-    title(['Instantaneous Power - ' freq ' Band - ' group_titles{g} ' - ' sides{side}]);
+    title(['Instantaneous Power - ' freq ' Band - ' group_titles{g} ' - ' sides{sides_name}]);
     legend({'iTBS','HF','cTBS','Sham'}, 'Location','best')
 end
 
-%% 
-fs = 250;  % sampling rate (Hz)
-LFP = LFP_run{1}.data;  % Nx2: [left, right]
-[nSamples, nChan] = size(LFP);
 
-[b, a] = butter(2, [1 100]/(fs/2));   % 2nd order
-LFP_filt = filtfilt(b, a, double(LFP));
+%% TEST
 
-epochLen = 2 * fs; % 2s window
-nEpochs = floor(nSamples / epochLen);
-LFP_epochs = reshape(LFP_filt(1:nEpochs*epochLen, :), epochLen, nEpochs, nChan);
+%Parameters
+fs = 250;                % Sampling frequency
+seg_len = 2*fs;           % 2-second segments
+nfft = 2^nextpow2(seg_len*2); % zero-padding for 0.25 Hz resolution
+smoothing = 2;            % 2 Hz smoothing
+num_tapers = round(smoothing/(1/seg_len)); % number of Hanning tapers
 
-freqRes = 0.25;               % Hz
-nfft = fs / freqRes;
-freqs = (0:nfft/2) * fs/nfft; % frequency vector up to Nyquist
-tapsmofrq = 2;                % ±2 Hz smoothing
-nw = tapsmofrq / 0.5;         % time–bandwidth product for 2 Hz smoothing
-[tapers, ~] = dpss(epochLen, nw, 'calc');
+%Filtering
+[b, a] = butter(2, [1 100]/(fs/2), 'bandpass');
+lfp = filtfilt(b, a, double(LFP_run{1}.data(:,1)));
 
-P = zeros(length(freqs), nChan);  % mean PSD across epochs
-for ch = 1:nChan
-    psd_accum = zeros(length(freqs), nEpochs);
-    for e = 1:nEpochs
-        x = LFP_epochs(:, e, ch);
-        x = detrend(x) .* hann(epochLen);
-        X = fft(x, nfft);
-        psd_accum(:, e) = abs(X(1:nfft/2+1)).^2 / (fs*epochLen);
+%Segment signal
+num_segments = floor(length(lfp)/seg_len);
+pxx_all = zeros(nfft,num_segments);
+
+for seg_idx = 1:num_segments
+    seg = lfp((seg_idx-1)*seg_len+1 : seg_idx*seg_len);
+    
+    seg_psd = zeros(nfft,1);
+    
+    for k = 1:num_tapers
+        % Create offset Hanning taper
+        offset = (k-1)/(num_tapers*2);      % fractional offset
+        n = (0:seg_len-1)/seg_len;
+        w = 0.5*(1 - cos(2*pi*(n + offset)));
+        
+        % FFT and PSD
+        X = fft(seg(:).*w(:), nfft);
+        seg_psd = seg_psd + (abs(X).^2)/sum(w.^2);
     end
-    P(:, ch) = mean(psd_accum, 2);
+    
+    % Average over tapers
+    seg_psd = seg_psd / num_tapers;
+    
+    pxx_all(:,seg_idx) = seg_psd;
 end
 
-osc_spec = zeros(size(P));
-for ch = 1:nChan
-    logf = log10(freqs(:));
-    logp = log10(P(:, ch));
-    fmask = freqs >= 1 & freqs <= 40;     % fit range
-    b = robustfit(logf(fmask), logp(fmask));
-    fit_logp = b(1) + b(2)*logf;           % 1/f fit
-    aperiodic = 10.^fit_logp;
-    osc_spec(:, ch) = P(:, ch) - aperiodic;
-end
+%Average across segments
+pxx_mean = mean(pxx_all,2);
+f = (0:nfft-1)*(fs/nfft);
 
-thetaRange = [3 8];
-theta_power = zeros(1, nChan);
+%% Plot
+figure;
+plot(f,10*log10(pxx_mean));
+xlim([0 100]);
+xlabel('Frequency (Hz)');
+ylabel('Power (dB)');
+title('Hanning Multitaper PSD (~2 Hz smoothing)');
 
-for ch = 1:nChan
-    fmask = freqs >= thetaRange(1) & freqs <= thetaRange(2);
-    [~, idxMax] = max(osc_spec(fmask, ch));
-    theta_freqs = freqs(fmask);
-    theta_peak = theta_freqs(idxMax);
+a=1;
+b = round(0.1*length(f));
 
-    win = 1; % ±1 Hz
-    pwMask = freqs >= theta_peak - win & freqs <= theta_peak + win;
-    theta_power(ch) = mean(osc_spec(pwMask, ch));
-end
+figure;
+plot(f(a:b), 10*log10(pxx_mean(a:b)))
+xlim([0, 10])
+xlabel('Frequency (Hz)');
+ylabel('Power (dB)');
+title('Hanning Multitaper PSD (~2 Hz smoothing)');
 
 
-winLen = 60 * fs;
-step = 10 * fs;
-startIdx = 1:step:(nSamples - winLen);
-theta_time = zeros(length(startIdx), nChan);
-
-for w = 1:length(startIdx)
-    idx = startIdx(w):(startIdx(w)+winLen-1);
-    seg = LFP_filt(idx, :);
-    % --- reuse your PSD + aperiodic-removal + beta-power code here
-    % (wrap the previous 3–5 steps into a function for cleanliness)
-    % result -> beta_time(w, :)
-end
-time_axis = (startIdx + winLen/2) / fs;  % seconds
-
-
-
-%% === Plot 1: Raw and 1/f-corrected power spectra ===
-
-figure('Name','Power Spectra','Color','k');
-chNames = {'Left', 'Right'};
-
-for ch = 1:size(P,2)
-    subplot(1,2,ch)
-    plot(freqs, 10*log10(P(:,ch)), 'Color', [0.4 0.4 0.4], 'LineWidth', 1.5); hold on
-    plot(freqs, 10*log10(osc_spec(:,ch)), 'r', 'LineWidth', 1.8);
-    xlim([0 100]); xlabel('Frequency (Hz)');
-    ylabel('Power (dB)');
-    title(chNames{ch});
-    legend('Raw PSD','Oscillatory (1/f removed)');
-    grid on
-end
-
-sgtitle('LFP Power Spectrum — Raw vs. 1/f-corrected');
-
-%% Plot 2: Zoom into Theta band (3-8 Hz)
-
-betaRange = [3 8];
-
-figure('Name','Theta Band Detail','Color','k');
-for ch = 1:size(P,2)
-    subplot(1,2,ch)
-    fmask = freqs >= thetaRange(1) & freqs <= thetaRange(2);
-    plot(freqs(fmask), 10*log10(osc_spec(fmask,ch)), 'w', 'LineWidth', 1.8);
-    hold on; grid on
-    [~, idxMax] = max(osc_spec(fmask,ch));
-    thetaPeak = freqs(fmask); 
-    thetaPeak = thetaPeak(idxMax);
-    xline(thetaPeak, '--r', sprintf('%.1f Hz', thetaPeak), 'LineWidth', 1.2);
-    xlabel('Frequency (Hz)');
-    ylabel('Power (dB)');
-    title([chNames{ch} ' — Theta Band']);
-end
-sgtitle('Theta-band Oscillatory Power');
-
-%% Plot 3: Bar chart of Theta power (per channel)
-
-figure('Name','Theta Power','Color','k');
-bar(theta_power, 'FaceColor', [0.3 0.5 0.9]);
-set(gca, 'XTickLabel', chNames, 'FontSize', 12);
-ylabel('Mean Oscillatory Theta Power');
-title('Mean theta-power (±1 Hz around peak)');
-grid on
 
 %% Metrics computation: Power@DMade 
 

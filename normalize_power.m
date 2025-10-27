@@ -100,6 +100,70 @@ function [TablePower, idxTrialsWoBaseline] = normalize_power(TablePower, flag_no
     elseif strcmp(flag_norm, 'BlockNorm')
 
         % TO BE IMPLEMENTED
+    elseif strcmp(flag_norm, 'OFF_Phases')
+        % Define the baseline per column
+        refs = {'B0', 'B0', 'B1', 'B1', 'B2'};
+        
+        if length(size(TablePower{1,1}{:})) > 2 % 3D matrix (scalogram)
+        
+            for i = 1:size(TablePower, 1) % loop over trials
+        
+                for j = 1:size(TablePower, 2) % loop over phases/columns
+        
+                    BaselinePhaseName = refs{j};  % use the corresponding baseline for this column
+        
+                    % Skip if the baseline does not exist
+                    if isempty(OriginalTablePower.(BaselinePhaseName){i})
+                        warning('Baseline phase %s does not exist for trial %d --> NO BASELINE CORRECTION', BaselinePhaseName, i);
+                        idxTrialsWoBaseline = [idxTrialsWoBaseline, i];
+                        continue
+                    end
+        
+                    % Skip if the data for this phase is empty
+                    if isempty(TablePower{i,j}{:})
+                        continue
+                    end
+        
+                    for k = 1:2 % loop over hemispheres (3rd dim)
+                        MeanBaseline = mean(OriginalTablePower.(BaselinePhaseName){i}(:,:,k), 2);
+                        StdBaseline  = std(OriginalTablePower.(BaselinePhaseName){i}(:,:,k), 0, 2);
+        
+                        TablePower{i,j}{:}(:,:,k) = ( TablePower{i,j}{:}(:,:,k) - MeanBaseline ) ./ StdBaseline;
+                    end
+        
+                end
+        
+            end
+        
+        elseif length(size(TablePower{1,1}{:})) == 2 % 2D matrix (Hilbert/spectrogram)
+        
+            for i = 1:size(TablePower, 1) % loop over trials
+        
+                for j = 1:size(TablePower, 2) % loop over phases/columns
+        
+                    BaselinePhaseName = refs{j};  % baseline for this column
+        
+                    if isempty(OriginalTablePower.(BaselinePhaseName){i})
+                        warning('Baseline phase %s does not exist for trial %d --> NO BASELINE CORRECTION', BaselinePhaseName, i);
+                        idxTrialsWoBaseline = [idxTrialsWoBaseline, i];
+                        continue
+                    end
+        
+                    if isempty(TablePower{i,j}{:})
+                        continue
+                    end
+        
+                    MeanBaseline = mean(OriginalTablePower.(BaselinePhaseName){i});
+                    StdBaseline  = std(OriginalTablePower.(BaselinePhaseName){i});
+        
+                    TablePower{i,j}{:}(:,1:2) = ( TablePower{i,j}{:}(:,1:2) - MeanBaseline ) ./ StdBaseline;
+        
+                end
+        
+            end
+        
+        end
+
 
     else
         error('Specify normalization type as TrialByTrial or BlockNorm') 
