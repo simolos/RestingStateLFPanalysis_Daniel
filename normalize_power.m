@@ -102,8 +102,9 @@ function [TablePower, idxTrialsWoBaseline] = normalize_power(TablePower, flag_no
         % TO BE IMPLEMENTED
     elseif strcmp(flag_norm, 'OFF_Phases')
         % Define the baseline per column
-        refs = {'B0', 'B0', 'B1', 'B1', 'B2'};
-        
+        % refs = {'B0', 'B0', 'B1', 'B1', 'B2'};
+        refs = {'B0', 'B0', 'B0', 'B0', 'B0'};
+
         if length(size(TablePower{1,1}{:})) > 2 % 3D matrix (scalogram)
         
             for i = 1:size(TablePower, 1) % loop over trials

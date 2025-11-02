@@ -70,7 +70,7 @@ path = define_general_path(flag_operator, flag_lab_pc, SubjId, SubjCat);
 
 
 %% Main loop
-for r = 1:length(run)
+for r = 1:2%length(run)
 
     Run = run{r};
     disp(num2str(Run))
@@ -268,6 +268,8 @@ for r = 1:length(run)
     % TableOffset.EP = {[] +1 'From1'}; % i2 will be i1+8s
     % TableOffset.Feedb = {[] +1 'From1'}; % i2 will be i1+1s
 
+    TableOffset.B0 = [+15 0]; % Exclude the first 15s
+
     Modified_Indexes_LFP_referred{r} = modify_phase_indexes(Indexes_LFP_referred{r}, LFP_run{r}, TableOffset);
 %     TableOffset = table('Size', [1 size(Indexes_LFP_referred{1}, 2)], ...
 %                  'VariableTypes', repmat({'cell'}, 1, size(Indexes_LFP_referred{1},2)), ...
@@ -318,7 +320,7 @@ for r = 1:length(run)
 
     %% Power computation through FIR+Hilbert and segmentation
 
-    FrequencyLimits = [3 6; 8 12; 12 30; 30 100]; % [3 6; 6 8; 8 12; 13 30; 30 100]; %; 7 12; 12 30; 30 80];
+    FrequencyLimits = [3 8; 8 12; 12 30; 30 100]; % [3 6; 6 8; 8 12; 13 30; 30 100]; %; 7 12; 12 30; 30 80];
     FrequencyLimits(:,1) = FrequencyLimits(:,1) - 0.25;
     FrequencyLimits(:,2) = FrequencyLimits(:,2) + 0.25;
     FrequencyLabels = {'Theta', 'Alpha', 'Beta', 'Gamma'}; % 'HighTheta', 'Alpha', 'Beta', 'Gamma'}; %, 
@@ -361,6 +363,8 @@ All_TablePowerHilbertAlpha = vertcat(TablePowerHilbertAlpha{:});
 All_TablePowerHilbertBeta = vertcat(TablePowerHilbertBeta{:});
 All_TablePowerHilbertGamma = vertcat(TablePowerHilbertGamma{:});
 All_TablePowerHilbertTheta = vertcat(TablePowerHilbertTheta{:});
+
+All_TableLFP = vertcat(TableLFP{:});
 
 All_TablePowerHilbertTheta_behav = horzcat(All_TableBehavior, All_TablePowerHilbertTheta);
 %% Delete trials (e.g. baseline corrupted)
@@ -422,7 +426,7 @@ averages = zeros(length(sides), length(run), 5);
 for s = 1:length(sides)%1
     figure;
     hold on
-    for row = 1:length(run)
+    for row = 1:2 %length(run) only HF and iTBS
         % Concatenate all 5 arrays in this row
         concat_data = [];
         for col = 1:5
@@ -430,17 +434,19 @@ for s = 1:length(sides)%1
             averages(s, row, col) = mean(PowerFreqData{row, col}{1}(:, sides(s)));
         end
 
+        concat_data = movmean(concat_data, 250 * 5); % To smoothen the
+        % visualisation
         
         % Plot the selected column
-        Time = linspace(0, 3.5, length(concat_data(:, sides(s))));
+        Time = (0:numel(concat_data(:, sides(s)))-1) / 250;
         plot(Time, concat_data(:, sides(s)), 'LineWidth', 2);
 
     end
     hold off
     xlabel("Time (s)")
-    ylabel("Power")
+    ylabel("Power (z)")
     title(['Instantaneous Power - ' char(freq) ' Band - ' char(sides_name(sides(s)))]);
-    xline([0.5, 1.5, 2.0, 3.0], 'w--', 'LineWidth', 3)    
+    xline([15, 15+60, 15+60+30, 15+60+30+60], '--', 'LineWidth', 1)    
     legend('iTBS','HF','cTBS','Sham', '', '', '', '')
 
 end
@@ -557,62 +563,7 @@ for g = 1:length(groups)
 end
 
 
-%% Function to estimate PSD
 
-function [pxx_mean, f] = computeLFP_PSD(LFP_data, fs, seg_len_sec, smoothing, freq_band)
-% computeLFP_PSD Compute PSD of LFP using segmented Hanning tapers
-%
-% INPUTS:
-%   LFP_data    - numeric vector, the LFP signal (single channel)
-%   fs          - sampling frequency in Hz
-%   seg_len_sec - segment length in seconds
-%   smoothing   - smoothing in Hz (used to determine number of tapers)
-%   freq_band   - 2-element vector [low high] in Hz for bandpass filtering
-%
-% OUTPUTS:
-%   pxx_mean    - mean PSD across segments
-%   f           - frequency vector
-
-    % Parameters
-    seg_len = seg_len_sec * fs;                     % samples per segment
-    nfft = 2^nextpow2(seg_len*2);                  % zero-padding for resolution
-    num_tapers = round(smoothing/(1/seg_len));     % number of Hanning tapers
-
-    % Filtering
-    [b, a] = butter(2, freq_band/(fs/2), 'bandpass');
-    lfp = filtfilt(b, a, double(LFP_data(:)));    % ensure column vector
-
-    % Segment signal
-    num_segments = floor(length(lfp)/seg_len);
-    pxx_all = zeros(nfft, num_segments);
-
-    for seg_idx = 1:num_segments
-        seg = lfp((seg_idx-1)*seg_len+1 : seg_idx*seg_len);
-
-        seg_psd = zeros(nfft,1);
-
-        for k = 1:num_tapers
-            % Offset Hanning taper
-            offset = (k-1)/(num_tapers*2);
-            n = (0:seg_len-1)/seg_len;
-            w = 0.5*(1 - cos(2*pi*(n + offset)));
-
-            % FFT and PSD
-            X = fft(seg(:).*w(:), nfft);
-            seg_psd = seg_psd + (abs(X).^2)/sum(w.^2);
-        end
-
-        % Average over tapers
-        seg_psd = seg_psd / num_tapers;
-
-        pxx_all(:,seg_idx) = seg_psd;
-    end
-
-    % Average across segments
-    pxx_mean = mean(pxx_all,2);
-    f = (0:nfft-1)*(fs/nfft);
-
-end
 %% TEST
 
 run_labels = {'iTBS', 'HF'};
@@ -2499,3 +2450,61 @@ plot_band_average_power({TablePower_mean_SE_subset1, TablePower_mean_SE_subset2}
 [TableSpectrogram_average_subset2, TableSpectrogram__SE_subset2, N2] = compute_band_average_spectrogram(TableInstantaneousPower_Hilbert_norm_subset{2}, FrequencyLimits, FrequencyLabels);
 
 plot_band_average_spectrogram({TableSpectrogram_average_subset1, TableSpectrogram_average_subset2}, {TableSpectrogram__SE_subset1, TableSpectrogram__SE_subset2}, NameBehavCondition, NamePhasesOfInterest, [N1 N2])
+
+
+%% Function to estimate PSD
+
+function [pxx_mean, f] = computeLFP_PSD(LFP_data, fs, seg_len_sec, smoothing, freq_band)
+% computeLFP_PSD Compute PSD of LFP using segmented Hanning tapers
+%
+% INPUTS:
+%   LFP_data    - numeric vector, the LFP signal (single channel)
+%   fs          - sampling frequency in Hz
+%   seg_len_sec - segment length in seconds
+%   smoothing   - smoothing in Hz (used to determine number of tapers)
+%   freq_band   - 2-element vector [low high] in Hz for bandpass filtering
+%
+% OUTPUTS:
+%   pxx_mean    - mean PSD across segments
+%   f           - frequency vector
+
+    % Parameters
+    seg_len = seg_len_sec * fs;                     % samples per segment
+    nfft = 2^nextpow2(seg_len*2);                  % zero-padding for resolution
+    num_tapers = round(smoothing/(1/seg_len));     % number of Hanning tapers
+
+    % Filtering
+    [b, a] = butter(2, freq_band/(fs/2), 'bandpass');
+    lfp = filtfilt(b, a, double(LFP_data(:)));    % ensure column vector
+
+    % Segment signal
+    num_segments = floor(length(lfp)/seg_len);
+    pxx_all = zeros(nfft, num_segments);
+
+    for seg_idx = 1:num_segments
+        seg = lfp((seg_idx-1)*seg_len+1 : seg_idx*seg_len);
+
+        seg_psd = zeros(nfft,1);
+
+        for k = 1:num_tapers
+            % Offset Hanning taper
+            offset = (k-1)/(num_tapers*2);
+            n = (0:seg_len-1)/seg_len;
+            w = 0.5*(1 - cos(2*pi*(n + offset)));
+
+            % FFT and PSD
+            X = fft(seg(:).*w(:), nfft);
+            seg_psd = seg_psd + (abs(X).^2)/sum(w.^2);
+        end
+
+        % Average over tapers
+        seg_psd = seg_psd / num_tapers;
+
+        pxx_all(:,seg_idx) = seg_psd;
+    end
+
+    % Average across segments
+    pxx_mean = mean(pxx_all,2);
+    f = (0:nfft-1)*(fs/nfft);
+
+end

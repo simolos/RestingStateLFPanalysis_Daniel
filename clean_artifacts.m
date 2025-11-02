@@ -12,7 +12,8 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
     cTBS_sequence = [repelem(0, round(30*LFP_filtered.Fs) + 1) Ramp repmat(Train2s, 1, 5*5) Ramp delay repelem(0, round(30*LFP_filtered.Fs)) Ramp repmat(Train2s, 1, 5*5) Ramp repelem(0, round(30*LFP_filtered.Fs))];
     HF_sequence = zeros(size(iTBS_sequence));
 
-    if contains(tag, 'iTBS') || contains(tag, 'HF') || contains(tag, 'sham')% HF cleaned as if it was iTBS!! (same for sham)
+    if contains(tag, 'iTBS') %|| contains(tag, 'HF') || contains(tag, 'sham')% HF cleaned as if it was iTBS!! (same for sham)
+        disp('Cleaning as iTBS')
         Flag_only_notch = 0;
         TI_sequence = iTBS_sequence;
     elseif contains(tag, 'cTBS')
@@ -21,26 +22,26 @@ function [LFP_filtered, TI] = clean_artifacts(LFP, TI, tag)
     % elseif contains(tag, 'sham')
     %     Flag_only_notch = 0;
     %     TI_sequence = HF_sequence;
-    elseif contains(tag, 'DBS') % for OCD --> no filtering at all
-        return
-    else
+    elseif contains(tag, 'HF')
         disp('Only notch filtering!')
         Flag_only_notch = 1;
-        TI.TIsequence_alignedToTrigger = HF_sequence;
-
+        TI_sequence = HF_sequence;
+    elseif contains(tag, 'DBS') % for OCD --> no filtering at all
+        return       
     end
         
 
     for h = 1:size(LFP_filtered.data,2) % loop over hemispheres
+
+        TIsequence_alignedToTrigger = [zeros(1, TI.TI_trig_LFP_referred + 1) TI_sequence];
+
+        % Cut TI_sequence to match the length of LFP
+        TIsequence_alignedToTrigger(length(LFP_filtered.data(:,h))+1 : end) = [];
+
+        TI.TIsequence_alignedToTrigger = TIsequence_alignedToTrigger;
+
         
         if Flag_only_notch == 0
-            TIsequence_alignedToTrigger = [zeros(1, TI.TI_trig_LFP_referred + 1) TI_sequence];
-
-            % Cut TI_sequence to match the length of LFP
-            TIsequence_alignedToTrigger(length(LFP_filtered.data(:,h))+1 : end) = [];
-
-            TI.TIsequence_alignedToTrigger = TIsequence_alignedToTrigger;
-
     
             % Plot raw LFP with TI sequence 
             % figure
